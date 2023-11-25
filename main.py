@@ -1,16 +1,18 @@
 # I ASSUME THAT ALL INPUTS ARE VALID, SHOULD I NOT?
 
-# class Game
 class Game:
 
     def __init__(self): 
         # state of the whole game at each step
         self.state = None
-        # maximum number k of objects that can be removed froma single heap
+        # maximum number k of objects that can be removed from a single heap
         self.max_removal = None
+        # flags if alpha-beta pruning should be applied
+        self.is_pruned = True
 
-    def play(self):
-        """ Allows for playing the game.
+
+    def play(self, is_pruned=True):
+        """ Allows playing the game.
         """
         # user should enter the number of heaps (int)
         n = int(input("Please enter the number of heaps: \n"))
@@ -18,45 +20,56 @@ class Game:
         # user should enter the number of objects in each heap (int)
         m = int(input("Please enter the number of objects in each heap: \n"))
 
-        # user should enter the number of objects that can be removed from a single heap
+        # user should enter the number of objects that can be removed from a single heap (int)
         k = int(input("Please enter the maximum number of objects that can be removed from a single heap: \n"))
 
         # update attributes
         self.state = self.initialize_game(n, m)
         self.max_removal = k
+        self.is_pruned = is_pruned
 
-        # if computer wins, winner = 0, otherwise winner = 1
+        # if the computer wins, winner = 0, otherwise winner = 1
         winner = 0
 
-        print("This is the initial structure of the heaps: \n")
+        print("-"*80)
+        print("\nThis is the initial state of the heaps: \n")
 
         # show initial state of the game
         self.drawheaps()
 
+        # execute the game to find a winner
+        winner = self.execute_game()
+
+        # show the game results
+        print("\nEnd of game!")
+        if winner == 1:
+            print("Well done! you won!")
+        else:
+            print("Sorry! You lost!")
+
+
+    def execute_game(self):
+        """Executes Nim alternating turns between the user and the computer until there is a winner
+        
+        Returns:
+            int: number identifying the winner of the game. 1 if it is the user
+                and 0 if it is the computer
+        """
+
         already_recommended = False
         while not self.is_terminal(self.state):
             # if already_recommended == True then recommendation has already been made
-            # and thus the action should not computed again for computational efficiency purposes
+            # and thus the action should not be computed again for computational efficiency purposes
             if not already_recommended:
                 action = self.max_decision(self.state)
 
-                ###########################################################################################################
+            print(f"I would recommend removing {action[1]} objects from heap {action[0]}\n")
 
-                # TO USE PRE-PRUNED ALGO REMOVE UNCOMMENT THE BELLOW ACTION VARIABLE, AND COMMENT THE ABOVE ACTION VARIABLE
-
-                #action = self.max_decision_pre_pruned(self.state)
-
-                ###########################################################################################################
-
-                # action = self.max_decision_pre_pruned(self.state)
-
-            print(f"I recommend you to remove {action[1]} objects from heap {action[0]}\n")
-
-            # user should enter the number of the heap they want to remove objects
-            heap_num = int(input("Please enter the number of the heap you want to remove objects from: \n"))
+            # user should enter the number of the heap they want to remove objects from
+            heap_num = int(input("Please enter the heap number you want to remove objects from: \n"))
 
             # user should enter the number of objects they want to remove
-            objects_num = int(input("PLease enter how many objects you want to remove: \n"))
+            objects_num = int(input("Please enter how many objects you want to remove: \n"))
 
             # validity check, if passes, then we continue the steps within the for loop,
             # otherwise we go to the start of the for loop
@@ -68,9 +81,9 @@ class Game:
 
             # update the state of the game accordingly
             self.update_state((heap_num, objects_num))
-            print("\nThe current structure of the heaps looks like this: \n")
+            print("\nThe heaps currently look like this: \n")
 
-            # show the post user's move game state
+            # show the state of the game after the user's action
             self.drawheaps()
 
             winner = 0
@@ -78,27 +91,13 @@ class Game:
             # if game has not finished coninue to computer's move
             if not self.is_terminal(self.state):
                 computer_action = self.min_decision(self.state)
-
-                ###########################################################################################################
-
-                # TO USE PRE-PRUNED ALGO REMOVE UNCOMMENT THE BELLOW COMPUTER_ACTION VARIABLE, AND COMMENT THE ABOVE COMPUTER_ACTION VARIABLE
-
-                #computer_action = self.min_decision_pre_pruned(self.state)
-
-                ###########################################################################################################
-
                 print(f"Computer removes {computer_action[1]} from heap {computer_action[0]}\n")
                 self.update_state(computer_action)
                 print("The current structure of the heaps looks like this: \n")
                 self.drawheaps()
                 winner = 1
-
-        # show the game results
-        print("End of game!\n")
-        if winner == 1:
-            print("Well done! you won!")
-        else:
-            print("Sorry! You lost!")   
+        
+        return winner
 
 
     def initialize_game(self, n, m):
@@ -106,13 +105,14 @@ class Game:
 
             Args:
                 n (int) : number of heaps
-                m (int) : numbe of objects in each heap
+                m (int) : number of objects in each heap
             
             Returns:
                 list : the initial game state in the form of a list
         """
         return [m] * n
-    
+
+
     def update_state(self, action):
         """ Updates the state of the game give the action taken.
 
@@ -125,7 +125,6 @@ class Game:
         """
         self.state[action[0]] -= action[1]
 
-    
 
     def is_valid(self, heap_num, objects_num):
         """ Checks if the user's input are valid.
@@ -146,8 +145,8 @@ class Game:
         
         objects_left = self.state[heap_num] 
 
-        # check if the number of objects is at most the maximum allowance or 
-        # at most the number of objects left in the heap
+        # check if the number of objects is at least 0 and at most the maximum
+        # allowance or the number of objects left in the heap
         if objects_num < 0 or objects_num > objects_left or objects_num > self.max_removal:
             print("Invalid number of objects! Please try again!")
             return False
@@ -160,15 +159,16 @@ class Game:
         heaps = self.state
 
         for idx, heap in enumerate(heaps):
-            print(f"Heap {idx}:", end="")
+            print(f"Heap {idx}:", end=" ")
             for num in range(heap):
                 print("o", end=" ")
             print()
         print()
+        print("-"*80)
 
 
     def max_decision(self, state):
-        """ Returns the Minmax decision of the Max (user) player.
+        """ Returns the Minimax decision of the Max (user) player.
 
             Args:
                 state (list) : current state of the game
@@ -180,26 +180,24 @@ class Game:
         alpha = -float("inf")
         beta = float("inf")
 
-        # needed for determining terminal state value
-        n = 0
-
         best_action = None
         max_value = -float("inf")
         for action in self.action(state):
-            min_value = self.min_(self.result(state, action), n, alpha, beta)
+            min_value = self.min_(self.result(state, action), 0, alpha, beta)
             if min_value > max_value:
                 best_action = action
                 max_value = min_value
-        
+
         return best_action
-            
+    
+
     def min_(self, state, n, alpha, beta):
         """ Returns minimum utility value given a particular state. Uses alpha-beta pruning.
 
             Args:
                 state (list) : the particular state being examined
                 n (int) : if n is even then when it comes the user to play, there are not any objects left 
-                             so the utility value for that terminal state is 1, whereas if the n is odd, then 
+                             so the utility value for that terminal state is 1, whereas if n is odd, then 
                              user must have removed the last object and thus the utility value of that terminal
                              state is -1.
                 alpha (float) : alpha is either -inf or -1 depending on the alpha-beta pruning algorithm
@@ -211,17 +209,15 @@ class Game:
         """
         n += 1
         if self.is_terminal(state):
-            if n % 2 == 0:
-                return 1
-            else:
-                return -1
-        value = float("inf")
+            return self.utility(n)
         
+        value = float("inf")
         for action in self.action(state):
             value = min(value, self.max_(self.result(state, action), n, alpha, beta))
-            if value <= alpha:
-                return value
-            beta = min(beta, value)
+            if self.is_pruned:
+                if value <= alpha:
+                    return value
+                beta = min(beta, value)
         
         return value
     
@@ -239,12 +235,10 @@ class Game:
         alpha = -float("inf")
         beta = float("inf")
 
-        # needed for determining the value of the terminal state
-        n = 1
         best_action = None
         min_value = float("inf")
         for action in self.action(state):
-            max_value = self.max_(self.result(state, action), n, alpha, beta)
+            max_value = self.max_(self.result(state, action), 1, alpha, beta)
             if max_value < min_value:
                 best_action = action
                 min_value = max_value
@@ -270,17 +264,16 @@ class Game:
         """
         n += 1
         if self.is_terminal(state):
-            if n % 2 == 0:
-                return 1
-            else:
-                return -1
+            return self.utility(n)
+        
         value = -float("inf")
         
         for action in self.action(state):
             value = max(value, self.min_(self.result(state, action), n, alpha, beta))
-            if value >= beta:
-                return value
-            alpha = max(alpha, value)
+            if self.is_pruned:
+                if value >= beta:
+                    return value
+                alpha = max(alpha, value)
         
         return value
     
@@ -305,7 +298,7 @@ class Game:
                     action_space.append((idx, i))
             else:
                 for i in range(1, self.max_removal+1):
-                    action_space.append((idx,i))
+                    action_space.append((idx, i))
 
         return action_space
     
@@ -322,7 +315,6 @@ class Game:
         return sum(state) == 0
     
 
-    
     def result(self, state, action):
         """ Gives the next state given a current state and action taken.
 
@@ -338,106 +330,27 @@ class Game:
         state[action[0]] -= action[1]
         
         return state
-
-
-    def max_decision_pre_pruned(self, state):
-        """ Returns the Minmax decision of the Max (user) player.
-
-            Args:
-                state (list) : current state of the game
-            
-            Returns:
-                tuple : first element of tuple indicates optimal number of heap, and second
-                        number indicates number of objects to be removed from that heap
-        """
-        n = 0
-        best_action = None
-        max_value = -float("inf")
-        for action in self.action(state):
-            min_value = self.min_pre_pruned(self.result(state, action), n) 
-            if min_value > max_value:
-                best_action = action
-                max_value = min_value
-        
-        return best_action
-            
-    def min_pre_pruned(self, state, n):
-        """ Returns minimum utility value given a particular state.
-
-            Args:
-                state (list) : the particular state being examined
-                n (int) : if n is even then when it comes the user to play, there are not any objects left 
-                             so the utility value for that terminal state is 1, whereas if the n is odd, then 
-                             user must have removed the last object and thus the utility value of that terminal
-                             state is -1
-
-            Returns:
-                int : 1 if the minimum utility value from that state is 1,
-                      -1 if the minimum utility value from that state is -1
-        """
-        n += 1
-        if self.is_terminal(state):
-            if n % 2 == 0:
-                return 1
-            else:
-                return -1
-        value = float("inf")
-        
-        for action in self.action(state):
-            value = min(value, self.max_pre_pruned(self.result(state, action), n))
-        
-        return value
     
-    def min_decision_pre_pruned(self, state):
-        """ Returns the Minmax decision of the Min (computer) player.
 
-            Args:
-                state (list) : current state of the game
-            
-            Returns:
-                tuple : first element of tuple indicates optimal number of heap, and second
-                        number indicates number of objects to be removed from that heap
-        """
-        n = 1
-        best_action = None
-        min_value = float("inf")
-        for action in self.action(state):
-            max_value = self.max_pre_pruned(self.result(state, action), n)
-            if max_value < min_value:
-                best_action = action
-                min_value = max_value
-
-        return best_action
-    
-    def max_pre_pruned(self, state, n):
-        """ Returns maximum utility value given a particular state. 
-
-            Args:
-                state (list) : the particular state being examined
-                n (int) : if n is even then when it comes the user to play, there are not any objects left 
-                             so the utility value for that terminal state is 1, whereas if the n is odd, then 
-                             user must have removed the last object and thus the utility value of that terminal
-                             state is -1.
-            
-            Returns:
-                int : 1 if the maximum utility value from that state is 1,
-                      -1 if the maximum utility value from that state is -1
-        """
-        n += 1
-        if self.is_terminal(state):
-            if n % 2 == 0:
-                return 1
-            else:
-                return -1
-        value = -float("inf")
+    def utility(self, n):
+        """Returns the utility of the leaf node
         
-        for action in self.action(state):
-            value = max(value, self.min_pre_pruned(self.result(state, action), n))
+        Args:
+            n (int) : if n is even then when it comes the user to play, there are not any objects left 
+                    so the utility value for that terminal state is 1, whereas if the n is odd, then 
+                    user must have removed the last object and thus the utility value of that terminal
+                    state is -1.
         
-        return value
+        Returns:
+            int: 1 if the utility of the terminal state is 1,
+                 -1 if the utility of the terminal state is -1
+        """
+        if n % 2 == 0:
+            return 1
+        else:
+            return -1
 
 
 if __name__ == "__main__":
     test = Game()
-
-    test.play()
+    test.play(is_pruned=True)
