@@ -1,3 +1,5 @@
+import time
+import numpy as np
 # I ASSUME THAT ALL INPUTS ARE VALID, SHOULD I NOT?
 
 class Game:
@@ -9,19 +11,13 @@ class Game:
         self.max_removal = None
         # flags if alpha-beta pruning should be applied
         self.is_pruned = True
+        # tracker of states visited every time minimax is called
+        self.states_visited = 1
 
 
-    def play(self, is_pruned=True):
-        """ Allows playing the game.
+    def play(self, m, n, k, is_pruned=True, automatic=True):
+        """ Runs a game of Nim.
         """
-        # user should enter the number of heaps (int)
-        n = int(input("Please enter the number of heaps: \n"))
-
-        # user should enter the number of objects in each heap (int)
-        m = int(input("Please enter the number of objects in each heap: \n"))
-
-        # user should enter the number of objects that can be removed from a single heap (int)
-        k = int(input("Please enter the maximum number of objects that can be removed from a single heap: \n"))
 
         # update attributes
         self.state = self.initialize_game(n, m)
@@ -38,7 +34,10 @@ class Game:
         self.drawheaps()
 
         # execute the game to find a winner
-        winner = self.execute_game()
+        if automatic:
+            winner, times, states_visited_log = self.execute_automatic_game()
+        else:
+            winner, times, states_visited_log = self.execute_game()
 
         # show the game results
         print("\nEnd of game!")
@@ -46,22 +45,35 @@ class Game:
             print("Well done! you won!")
         else:
             print("Sorry! You lost!")
+        
+        return times, states_visited_log
 
 
     def execute_game(self):
-        """Executes Nim alternating turns between the user and the computer until there is a winner
+        """Executes Nim alternating turns between the user and the computer 
+        until there is a winner
         
         Returns:
             int: number identifying the winner of the game. 1 if it is the user
                 and 0 if it is the computer
+            list (floats): list containing the time taken to evaluate the 
+                            decision tree at every move
         """
-
+        # list used to record the time taken to evaluate the game tree at every move
+        times = []
+        states_visited_log = []
         already_recommended = False
         while not self.is_terminal(self.state):
             # if already_recommended == True then recommendation has already been made
             # and thus the action should not be computed again for computational efficiency purposes
             if not already_recommended:
+                start_time = time.time()
                 action = self.max_decision(self.state)
+                end_time = time.time()
+                times.append(end_time - start_time)
+                states_visited_log.append(self.states_visited)
+                self.states_visited = 1
+
 
             print(f"I would recommend removing {action[1]} objects from heap {action[0]}\n")
 
@@ -88,17 +100,72 @@ class Game:
 
             winner = 0
 
-            # if game has not finished coninue to computer's move
+            # if game has not finished continue to computer's move
             if not self.is_terminal(self.state):
+                start_time = time.time()
                 computer_action = self.min_decision(self.state)
+                end_time = time.time()
+                times.append(end_time - start_time)
+                states_visited_log.append(self.states_visited)
+                self.states_visited = 1
+
                 print(f"Computer removes {computer_action[1]} from heap {computer_action[0]}\n")
                 self.update_state(computer_action)
-                print("The current structure of the heaps looks like this: \n")
+                print("The heaps currently look like this: \n")
                 self.drawheaps()
                 winner = 1
         
-        return winner
+        return winner, times, states_visited_log
 
+
+    def execute_automatic_game(self):
+        """Executes Nim alternating turns between two computer players 
+        until there is a winner
+        
+        Returns:
+            int: number identifying the winner of the game. 1 if it is the user
+                and 0 if it is the computer
+            list (floats): list containing the time taken to evaluate the 
+                            decision tree at every move
+        """
+        # list used to record the time taken to evaluate the game tree at every move
+        times = []
+        states_visited_log = []
+
+        while not self.is_terminal(self.state):
+
+            start_time = time.time()
+            computer_action = self.max_decision(self.state)
+            end_time = time.time()
+            times.append(end_time - start_time)
+            states_visited_log.append(self.states_visited)
+            self.states_visited = 1
+
+            print(f"Computer removes {computer_action[1]} from heap {computer_action[0]}\n")
+            self.update_state(computer_action)
+            print("\nThe heaps currently look like this: \n")
+
+            # show the state of the game after the user's action
+            self.drawheaps()
+
+            winner = 0
+
+            # if game has not finished continue to computer's move
+            if not self.is_terminal(self.state):
+                start_time = time.time()
+                computer_action = self.min_decision(self.state)
+                end_time = time.time()
+                times.append(end_time - start_time)
+                states_visited_log.append(self.states_visited)
+                self.states_visited = 1
+
+                print(f"Computer removes {computer_action[1]} from heap {computer_action[0]}\n")
+                self.update_state(computer_action)
+                print("The heaps currently look like this: \n")
+                self.drawheaps()
+                winner = 1
+        
+        return winner, times, states_visited_log
 
     def initialize_game(self, n, m):
         """ Forms the intial state structure of the game.
@@ -328,6 +395,9 @@ class Game:
         # copy to prevent mutation
         state = state.copy()
         state[action[0]] -= action[1]
+
+        # update number of states visited
+        self.states_visited += 1
         
         return state
     
@@ -353,4 +423,20 @@ class Game:
 
 if __name__ == "__main__":
     test = Game()
-    test.play(is_pruned=True)
+    max_m = 4
+    max_n = 4
+    max_k = 4
+    record = np.zeros((2, max_k, max_n, max_m))
+
+    for k in range(1, max_k+1):
+        for n in range(1, max_n+1):
+            for m in range(1, max_m+1):
+                print(f"At k: {k}, n: {n}, m: {m}")
+                times, states_visited = test.play(m, n, k, is_pruned=False, automatic=True)
+                record[0, k-1, n-1, m-1] = times[0]
+                record[1, k-1, n-1, m-1] = states_visited[0]
+    
+    for k in range(1, max_k+1):
+        print(f"\n For k = {k}")
+        print(f"Times: {record[0, k-1, :, :]}")
+        print(f"States visited: {record[1, k-1, :, :]}")
