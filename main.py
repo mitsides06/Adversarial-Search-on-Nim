@@ -430,6 +430,9 @@ class Game:
 if __name__ == "__main__":
 
     nim = Game()
+    m = 2
+    n = 2
+    k = 2
     
     times, states_visited = nim.play(m, n, k, is_pruned=False, automatic=True)
 
