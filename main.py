@@ -41,10 +41,16 @@ class Game:
 
         # show the game results
         print("\nEnd of game!")
-        if winner == 1:
-            print("Well done! you won!")
+        if automatic:
+            if winner == 1:
+                print("Computer 1 has won")
+            else:
+                print("Computer 2 has won")
         else:
-            print("Sorry! You lost!")
+            if winner == 1:
+                print("Well done! you won!")
+            else:
+                print("Sorry! You lost!")
         
         return times, states_visited_log
 
@@ -422,17 +428,22 @@ class Game:
 
 
 if __name__ == "__main__":
-    test = Game()
-    max_m = 4
-    max_n = 4
-    max_k = 4
+
+    nim = Game()
+    
+    times, states_visited = nim.play(m, n, k, is_pruned=False, automatic=True)
+
+    """
+    max_m = 3
+    max_n = 3
+    max_k = 2
     record = np.zeros((2, max_k, max_n, max_m))
 
     for k in range(1, max_k+1):
         for n in range(1, max_n+1):
             for m in range(1, max_m+1):
                 print(f"At k: {k}, n: {n}, m: {m}")
-                times, states_visited = test.play(m, n, k, is_pruned=False, automatic=True)
+                times, states_visited = nim.play(m, n, k, is_pruned=False, automatic=True)
                 record[0, k-1, n-1, m-1] = times[0]
                 record[1, k-1, n-1, m-1] = states_visited[0]
     
@@ -440,3 +451,5 @@ if __name__ == "__main__":
         print(f"\n For k = {k}")
         print(f"Times: {record[0, k-1, :, :]}")
         print(f"States visited: {record[1, k-1, :, :]}")
+    """
+    
