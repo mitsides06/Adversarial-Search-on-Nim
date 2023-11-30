@@ -86,14 +86,20 @@ class Game:
             # and thus the action should not be computed again for computational efficiency purposes
             if not already_recommended:
                 start_time = time.time()
-                action = self.max_decision(self.state)
+                actions = self.max_decision(self.state)
                 end_time = time.time()
                 times.append(end_time - start_time)
                 states_visited_log.append(self.states_visited)
                 self.states_visited = 1
 
+            ##########################################################
+            print(f"I would recommend removing {actions[0][1]} objects from heap {actions[0][0]}\n")
 
-            print(f"I would recommend removing {action[1]} objects from heap {action[0]}\n")
+            if len(actions) > 0:
+                for action in actions[1:]:
+                    print("OR\n")
+                    print(f"I would recommend removing {action[1]} objects from heap {action[0]}\n")
+            ########################################################################
 
             # user should enter the number of the heap they want to remove objects from
             heap_num = int(input("Please enter the heap number you want to remove objects from: \n"))
@@ -153,7 +159,9 @@ class Game:
         while not self.is_terminal(self.state):
 
             start_time = time.time()
-            computer_action = self.max_decision(self.state)
+            #####################################################
+            computer_action = self.max_decision(self.state)[0]
+            ############################################
             end_time = time.time()
             times.append(end_time - start_time)
             states_visited_log.append(self.states_visited)
@@ -270,9 +278,15 @@ class Game:
         for action in self.action(state):
             min_value = self.min_(self.result(state, action), 0, alpha, beta)
             if min_value > max_value:
-                best_action = action
+                #######################################################
+                best_action = [action]
+                ###########################################################################
                 max_value = min_value
 
+            ###################################################################
+            elif min_value == max_value:
+                best_action.append(action)
+            #####################################################################
         return best_action
     
 
@@ -446,7 +460,7 @@ if __name__ == "__main__":
     n = 5
     k = 3
     
-    times, states_visited = nim.play(m, n, k, is_pruned=True, automatic=True)
+    times, states_visited = nim.play(m, n, k)
 
     """
     max_m = 3
