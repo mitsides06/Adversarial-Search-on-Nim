@@ -11,3 +11,5 @@ This project showcases the strategic implementation of the Minimax algorithm, en
 - **User Interaction:** Users can choose to play against the computer or watch the computer play against itself.
 - **Parameter Flexibility:** The impact of different game parameters (m, n, k) on the algorithm's performance is explored.
 
+## Libraries
+- NumPy
