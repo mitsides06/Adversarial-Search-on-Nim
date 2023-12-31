@@ -1,9 +1,11 @@
+# Adversarial Search using Minimax Algorithm on the Nim Game
+
 ## Project Description
 This project showcases the strategic implementation of the Minimax algorithm, enhanced with optional α-β pruning, to create an intelligent and challenging Nim game opponent.
 
-## Repository Structure
-- "main.py" : Core Python script implementing the Minimax algorithm for Nim, with options for α-β pruning and different modes of gameplay.
-- "report.pdf" : Comprehensive report detailing the implementation approach, algorithm analysis, and insights on performance and parameter impacts.
+## Contents
+- `main.py` : Core Python script implementing the Minimax algorithm for Nim, with options for α-β pruning and different modes of gameplay.
+- `report.pdf` : Comprehensive report detailing the implementation approach, algorithm analysis, and insights on performance and parameter impacts.
 
 ## Key Features
 - **Minimax Algorithm:** Core implementation of adversarial search strategy.
